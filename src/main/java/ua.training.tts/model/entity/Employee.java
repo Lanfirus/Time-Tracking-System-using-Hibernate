@@ -1,20 +1,36 @@
 package ua.training.tts.model.entity;
 
+import javax.persistence.*;
+
+@Entity
 public class Employee {
 
     public enum AccountRole {
         ADMIN, EMPLOYEE, UNKNOWN
     }
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "employee_id")
     private Integer id;
+    @Column(name = "employee_login")
     private String login;
+    @Column(name = "employee_password")
     private String password;
+    @Column(name = "employee_name")
     private String name;
+    @Column(name = "employee_surname")
     private String surname;
+    @Column(name = "employee_patronymic")
     private String patronymic;
+    @Column(name = "employee_email")
     private String email;
+    @Column(name = "employee_mobile_phone")
     private String mobilePhone;
+    @Column(name = "employee_comment")
     private String comment;
+    @Column(name = "employee_account_role", columnDefinition = "enum")
+    //@Enumerated(EnumType.STRING)
     private AccountRole accountRole;
 
     public int getId() {
@@ -95,5 +111,9 @@ public class Employee {
 
     public void setAccountRole(AccountRole accountRole) {
         this.accountRole = accountRole;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 }

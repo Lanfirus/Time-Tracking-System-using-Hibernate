@@ -1,7 +1,9 @@
 package ua.training.tts.model.entity;
 
+import javax.persistence.*;
 import java.time.LocalDate;
 
+@Entity
 public class Task {
 
     public enum Status {
@@ -12,13 +14,23 @@ public class Task {
         APPROVED, NOT_APPROVED, NEW_REQUEST
     }
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "task_id")
     private Integer id;
+    @Column(name = "project_id")
     private Integer projectId;
+    @Column(name = "employee_id")
     private Integer employeeId;
+    @Column(name = "task_name")
     private String name;
+    @Column(name = "task_status", columnDefinition = "enum")
     private Status status;
+    @Column(name = "task_deadline")
     private LocalDate deadline;
+    @Column(name = "task_spent_time")
     private Integer spentTime;
+    @Column(name = "task_approval_state", columnDefinition = "enum")
     private ApprovalState approvalState;
 
     public Integer getId() {

@@ -1,9 +1,11 @@
 package ua.training.tts.model.service;
 
+import org.hibernate.Session;
 import ua.training.tts.constant.ExceptionMessages;
 import ua.training.tts.constant.General;
 import ua.training.tts.constant.ReqSesParameters;
 import ua.training.tts.constant.model.dao.TableParameters;
+import ua.training.tts.controller.util.HibernateUtil;
 import ua.training.tts.model.dao.EmployeeDao;
 import ua.training.tts.model.dao.factory.DaoFactory;
 import ua.training.tts.model.entity.Employee;
@@ -21,6 +23,7 @@ public class EmployeeService {
 
     private ResourceBundle regexpBundle;
     private EmployeeDao dao = DaoFactory.getInstance().createEmployeeDao();
+    private Session session = HibernateUtil.getSession();
 
     /**
      * Builds Employee entity from the data passed within user's http servlet request
@@ -59,7 +62,8 @@ public class EmployeeService {
                     throw new NotUniqueLoginException();
                 }
                 else {
-                    throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
+                    //throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
+                    throw new RuntimeException(e.getMessage());
                 }
             }
         }
@@ -146,7 +150,12 @@ public class EmployeeService {
      * @param employee      Employee entity built from user's registration data
      */
     private void sendReadyRegistrationDataToDB(Employee employee) {
-        dao.create(employee);
+        //dao.create(employee);
+        //Session session = HibernateUtil.getSession();
+        session.persist(employee);
+        System.out.println(employee);
+        session.flush();
+        session.close();
     }
 
     /**

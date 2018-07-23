@@ -1,17 +1,25 @@
 package ua.training.tts.model.entity;
 
 
+import javax.persistence.*;
 import java.time.LocalDate;
 
+@Entity
 public class Project {
 
     public enum Status {
         NEW, ASSIGNED, FINISHED, CANCELLED
     }
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "project_id")
     private Integer id;
+    @Column(name = "project_name")
     private String name;
+    @Column(name = "project_deadline")
     private LocalDate deadline;
+    @Column(name = "project_status", columnDefinition = "enum")
     private Status status;
 
     public Integer getId() {
@@ -57,5 +65,8 @@ public class Project {
         this.name = name;
         this.deadline = deadline;
         this.status = status;
+    }
+
+    public Project() {
     }
 }

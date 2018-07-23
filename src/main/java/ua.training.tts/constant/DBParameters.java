@@ -3,6 +3,7 @@ package ua.training.tts.constant;
 public interface DBParameters {
 
     String URL_CUSTOM = "jdbc:mysql://localhost/time_tracking?characterEncoding=utf8&verifyServerCertificate=false&useSSL=true";
+    String URL_CUSTOM2 = "jdbc:mysql://localhost/time_tracking2?characterEncoding=utf8&verifyServerCertificate=false&useSSL=true";
     String NAME = "root";
     String PASSWORD = "root";
 

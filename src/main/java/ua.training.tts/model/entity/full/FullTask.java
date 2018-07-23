@@ -4,6 +4,7 @@ import ua.training.tts.model.entity.Employee;
 import ua.training.tts.model.entity.Project;
 import ua.training.tts.model.entity.Task;
 
+import javax.persistence.Entity;
 import java.time.LocalDate;
 
 public class FullTask {
