@@ -14,6 +14,9 @@ import ua.training.tts.model.exception.NotUniqueLoginException;
 import ua.training.tts.util.PasswordHashing;
 import ua.training.tts.model.util.builder.EmployeeBuilder;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.*;
@@ -23,7 +26,6 @@ public class EmployeeService {
 
     private ResourceBundle regexpBundle;
     private EmployeeDao dao = DaoFactory.getInstance().createEmployeeDao();
-    private Session session = HibernateUtil.getSession();
 
     /**
      * Builds Employee entity from the data passed within user's http servlet request
@@ -63,7 +65,7 @@ public class EmployeeService {
                 }
                 else {
                     //throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-                    throw new RuntimeException(e.getMessage());
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -90,7 +92,8 @@ public class EmployeeService {
                     throw new NotUniqueLoginException();
                 }
                 else {
-                    throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
+//                    throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -152,9 +155,10 @@ public class EmployeeService {
     private void sendReadyRegistrationDataToDB(Employee employee) {
         //dao.create(employee);
         //Session session = HibernateUtil.getSession();
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
         session.persist(employee);
-        System.out.println(employee);
-        session.flush();
+        session.getTransaction().commit();
         session.close();
     }
 
@@ -163,7 +167,13 @@ public class EmployeeService {
      * @param employee      Employee entity built from user's update data
      */
     public void sendReadyUpdateDataToDB(Employee employee) {
-        dao.update(employee);
+        //dao.update(employee);
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        Employee updatedEmployee = (Employee)session.merge(employee);
+        session.persist(updatedEmployee);
+        session.getTransaction().commit();
+        session.close();
     }
 
     /**
@@ -182,19 +192,47 @@ public class EmployeeService {
     }
 
     public boolean isEmployeeExist(String login, String password){
-        return dao.isEntryExist(login, password);
+        //return dao.isEntryExist(login, password);
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        Employee employee = session.byNaturalId(Employee.class).using("login", login).load();
+        session.getTransaction().commit();
+        session.close();
+        return Objects.nonNull(employee);
     }
 
     public Employee findByLogin(String login){
-        return dao.findByLogin(login);
+        //return dao.findByLogin(login);
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        Employee employee = session.byNaturalId(Employee.class).using("login", login).load();
+        session.getTransaction().commit();
+        session.close();
+        return employee;
     }
 
     public Employee findById(Integer id){
-        return dao.findById(id);
+        //return dao.findById(id);
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        Employee employee = session.load(Employee.class, id);
+        session.getTransaction().commit();
+        session.close();
+        return employee;
     }
 
     public List<Employee> findAll(){
-        return dao.findAll();
+        //return dao.findAll();
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Employee> criteria = builder.createQuery(Employee.class);
+        Root<Employee> employeeRoot = criteria.from(Employee.class);
+        criteria.select(employeeRoot);
+        List<Employee> employeeList = session.createQuery(criteria).getResultList();
+        session.getTransaction().commit();
+        session.close();
+        return employeeList;
     }
 
     public void setRoleById(Integer id, String role){

@@ -1,9 +1,13 @@
 package ua.training.tts.model.entity;
 
+import org.hibernate.annotations.NaturalId;
+import ua.training.tts.model.util.EnumConverter;
+
 import javax.persistence.*;
+import java.io.Serializable;
 
 @Entity
-public class Employee {
+public class Employee implements Serializable{
 
     public enum AccountRole {
         ADMIN, EMPLOYEE, UNKNOWN
@@ -14,6 +18,7 @@ public class Employee {
     @Column(name = "employee_id")
     private Integer id;
     @Column(name = "employee_login")
+    @NaturalId
     private String login;
     @Column(name = "employee_password")
     private String password;
@@ -29,8 +34,10 @@ public class Employee {
     private String mobilePhone;
     @Column(name = "employee_comment")
     private String comment;
-    @Column(name = "employee_account_role", columnDefinition = "enum")
+    //@Enumerated(EnumType.ORDINAL)
+    @Column(name = "employee_account_role", columnDefinition = "enum", insertable = false, updatable = false)
     //@Enumerated(EnumType.STRING)
+    @Convert(converter = EnumConverter.class)
     private AccountRole accountRole;
 
     public int getId() {
@@ -115,5 +122,21 @@ public class Employee {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    @Override
+    public String toString() {
+        return "Employee{" +
+                "id=" + id +
+                ", login='" + login + '\'' +
+                ", password='" + password + '\'' +
+                ", name='" + name + '\'' +
+                ", surname='" + surname + '\'' +
+                ", patronymic='" + patronymic + '\'' +
+                ", email='" + email + '\'' +
+                ", mobilePhone='" + mobilePhone + '\'' +
+                ", comment='" + comment + '\'' +
+                ", accountRole=" + accountRole +
+                '}';
     }
 }
