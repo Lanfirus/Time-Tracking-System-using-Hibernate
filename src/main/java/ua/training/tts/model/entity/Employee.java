@@ -1,7 +1,7 @@
 package ua.training.tts.model.entity;
 
 import org.hibernate.annotations.NaturalId;
-import ua.training.tts.model.util.EnumConverter;
+import ua.training.tts.model.util.AccountRoleEnumConverter;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -35,18 +35,18 @@ public class Employee implements Serializable{
     @Column(name = "employee_comment")
     private String comment;
     //@Enumerated(EnumType.ORDINAL)
-    @Column(name = "employee_account_role", columnDefinition = "enum", insertable = false, updatable = false)
+    @Column(name = "employee_account_role", columnDefinition = "enum default 'employee'", insertable = false)
     //@Enumerated(EnumType.STRING)
-    @Convert(converter = EnumConverter.class)
+    @Convert(converter = AccountRoleEnumConverter.class)
     private AccountRole accountRole;
 
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
+    /*public void setId(int id) {
         this.id = id;
-    }
+    }*/
 
     public String getLogin() {
         return login;

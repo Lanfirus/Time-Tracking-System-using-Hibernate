@@ -1,10 +1,14 @@
 package ua.training.tts.model.entity;
 
 
+import org.hibernate.annotations.Proxy;
+import ua.training.tts.model.util.StatusEnumConverter;
+
 import javax.persistence.*;
 import java.time.LocalDate;
 
 @Entity
+@Proxy(lazy = false)
 public class Project {
 
     public enum Status {
@@ -19,7 +23,8 @@ public class Project {
     private String name;
     @Column(name = "project_deadline")
     private LocalDate deadline;
-    @Column(name = "project_status", columnDefinition = "enum")
+    @Column(name = "project_status", columnDefinition = "enum", insertable = false)
+    @Convert(converter = StatusEnumConverter.class)
     private Status status;
 
     public Integer getId() {
@@ -68,5 +73,15 @@ public class Project {
     }
 
     public Project() {
+    }
+
+    @Override
+    public String toString() {
+        return "Project{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", deadline=" + deadline +
+                ", status=" + status +
+                '}';
     }
 }

@@ -1,10 +1,5 @@
 package ua.training.tts.controller.servlet;
 
-import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Configuration;
-import org.hibernate.cfg.Environment;
-import org.hibernate.dialect.MySQL57Dialect;
-import ua.training.tts.constant.DBParameters;
 import ua.training.tts.constant.ReqSesParameters;
 import ua.training.tts.constant.controller.Servlet;
 import ua.training.tts.constant.controller.command.CommandParameters;
@@ -22,11 +17,6 @@ import ua.training.tts.controller.command.profile.ProfileUpdate;
 import ua.training.tts.controller.command.redirect.*;
 import ua.training.tts.controller.util.AccessRights;
 import ua.training.tts.controller.util.EmployeeDTO;
-import ua.training.tts.controller.util.HibernateUtil;
-import ua.training.tts.model.entity.Employee;
-import ua.training.tts.model.entity.Project;
-import ua.training.tts.model.entity.Task;
-import ua.training.tts.model.entity.full.FullTask;
 import ua.training.tts.model.service.EmployeeService;
 import ua.training.tts.model.service.FullTaskService;
 import ua.training.tts.model.service.ProjectService;

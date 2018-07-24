@@ -1,6 +1,7 @@
 package ua.training.tts.model.service;
 
 import org.hibernate.Session;
+import org.hibernate.annotations.DynamicUpdate;
 import ua.training.tts.constant.ExceptionMessages;
 import ua.training.tts.constant.General;
 import ua.training.tts.constant.ReqSesParameters;
@@ -60,7 +61,8 @@ public class EmployeeService {
                 sendReadyRegistrationDataToDB(employee);
             }
             catch(RuntimeException e){
-                if (e.getMessage().contains(ExceptionMessages.UNIQUE)) {
+                //if (e.getMessage().contains(ExceptionMessages.UNIQUE)) {
+                if (e.getMessage().contains(ExceptionMessages.CONSTRAINT)) {
                     throw new NotUniqueLoginException();
                 }
                 else {
@@ -88,7 +90,8 @@ public class EmployeeService {
                 sendReadyUpdateDataToDB(employee);
             }
             catch(RuntimeException e){
-                if (e.getMessage().contains(ExceptionMessages.UNIQUE)) {
+                //if (e.getMessage().contains(ExceptionMessages.UNIQUE)) {
+                if (e.getMessage().contains(ExceptionMessages.CONSTRAINT)) {
                     throw new NotUniqueLoginException();
                 }
                 else {
@@ -236,10 +239,31 @@ public class EmployeeService {
     }
 
     public void setRoleById(Integer id, String role){
-        dao.setRoleById(id, role);
+        //dao.setRoleById(id, role);
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        session.createQuery("update Employee set accountRole = :role where id = :id")
+                .setParameter("role", Employee.AccountRole.valueOf(role.toUpperCase()))
+                .setParameter("id", id)
+                .executeUpdate();
+        /*Employee employee = session.load(Employee.class, id);
+        employee.setAccountRole(Employee.AccountRole.valueOf(role.toUpperCase()));
+        session.update(employee);*/
+        session.getTransaction().commit();
+        session.close();
     }
 
     public void deleteById(Integer id){
-        dao.delete(id);
+        //dao.delete(id);
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        //session.delete(session.load(Employee.class, id));
+        session.createQuery("delete from Employee where id= :id").setParameter("id", id)
+                .executeUpdate();
+        /*Employee employee = new Employee();
+        employee.setId(id);
+        session.delete(employee);*/
+        session.getTransaction().commit();
+        session.close();
     }
 }
