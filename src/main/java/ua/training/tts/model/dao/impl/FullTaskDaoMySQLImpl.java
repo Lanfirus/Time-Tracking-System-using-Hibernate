@@ -1,13 +1,15 @@
 package ua.training.tts.model.dao.impl;
 
+import org.hibernate.Session;
 import ua.training.tts.constant.ExceptionMessages;
 import ua.training.tts.constant.model.dao.TableParameters;
+import ua.training.tts.controller.util.HibernateUtil;
 import ua.training.tts.model.dao.FullTaskDao;
 import ua.training.tts.model.dao.connectionpool.ConnectionPool;
 import ua.training.tts.model.entity.Project;
 import ua.training.tts.model.entity.full.FullTask;
 import ua.training.tts.model.util.RequestBuilder;
-import ua.training.tts.model.util.builder.FullTaskBuilder;
+//import ua.training.tts.model.util.builder.FullTaskBuilder;
 import ua.training.tts.util.LogMessageHolder;
 
 import java.sql.*;
@@ -24,13 +26,28 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
     private String savedStatement;
     private StringBuilder buildedStatement;
 
-    public FullTaskDaoMySQLImpl(RequestBuilder builder){
+    public FullTaskDaoMySQLImpl(RequestBuilder builder) {
         this.builder = builder;
     }
 
     @Override
+    public void archiveProjectAndTasks(Integer id) throws SQLException {
+
+    }
+
+    @Override
     public List<FullTask> findAll() {
-        builder.clear();
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        List<FullTask> fullTaskList = session.createQuery("select new FullTask(project, task, employee) " +
+                "from Task task join Project project join Employee employee")
+                .list();
+        System.out.println(fullTaskList);
+        session.getTransaction().commit();
+        session.close();
+        return fullTaskList;
+
+       /* builder.clear();
         List<FullTask> resultList = new ArrayList<>();
         String request = builder.selectAllFromTable(TableParameters.TASK_TABLE_NAME)
                                 .join(TableParameters.PROJECT_TABLE_NAME)
@@ -51,17 +68,17 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
                                                                                             savedStatement), e);
             throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
         }
-        return resultList;
+        return resultList;*/
     }
 
     /**
      * Builds FullTask entity from data gotten from database
      *
      * @param set       Result set with data from database
-     * @return          FullTask entity filled with data from database
+     * @return FullTask entity filled with data from database
      * @throws SQLException
      */
-    private FullTask extractDataFromResultSet(ResultSet set) throws SQLException {
+    /*private FullTask extractDataFromResultSet(ResultSet set) throws SQLException {
         FullTaskBuilder builder = new FullTaskBuilder();
         FullTask fullTask = builder.setTaskId(set.getInt(TableParameters.TASK_ID))
                 .setTaskName(set.getString(TableParameters.TASK_NAME))
@@ -88,6 +105,16 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
 
                 .buildFullTask();
         return fullTask;
+    }*/
+
+    @Override
+    public FullTask findById(Integer integer) {
+        return null;
+    }
+
+    @Override
+    public void delete(Integer integer) {
+
     }
 
     /**
@@ -95,61 +122,37 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
      * Project entity doesn't have relation to Employees, so it's necessary to get such information through
      * FullTask entity.
      *
-     * @param id        Employee Id
-     * @return          List of FullTask entities filled with project data from database
+     * @param id Employee Id
+     * @return List of FullTask entities filled with project data from database
      */
     @Override
     public List<FullTask> findAllProjectsByEmployeeId(Integer id) {
-        builder.clear();
-        List<FullTask> resultList = new ArrayList<>();
-        List<String> columnNames = Arrays.asList(TableParameters.PROJECT_ID, TableParameters.PROJECT_NAME,
-                TableParameters.PROJECT_DEADLINE, TableParameters.PROJECT_STATUS);
-        String request = builder.selectSomeFromTableDistinct(TableParameters.TASK_TABLE_NAME, columnNames)
-                                .join(TableParameters.PROJECT_TABLE_NAME)
-                                .using(TableParameters.PROJECT_ID)
-                                .where(TableParameters.EMPLOYEE_ID)
-                                .and(TableParameters.PROJECT_STATUS)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-                PreparedStatement statement = connection.prepareStatement(request)){
-            statement.setInt(1, id);
-            statement.setString(2, Project.Status.ASSIGNED.name().toLowerCase());
-            savedStatement = statement.toString();
-            ResultSet set = statement.executeQuery();
-            while (set.next()){
-                FullTask result = extractProjectDataFromResultSet(set);
-                resultList.add(result);
-            }
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordSearchingInTableProblem(TableParameters.PROJECT_TABLE_NAME,
-                                                                                        savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
-        return resultList;
-    }
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        List<FullTask> fullTaskList = session.createQuery("select distinct " +
+                "new ua.training.tts.model.entity.full.FullTask(project, task) " +
+                "from Task task join Project project on task.projectId = project.id " +
+                "where task.employeeId = :id and project.status = :status " +
+                "group by project.id")
+                .setParameter("id", id)
+                .setParameter("status", Project.Status.ASSIGNED)
+                .list();
+        session.getTransaction().commit();
+        session.close();
+        return fullTaskList;
 
-    private FullTask extractProjectDataFromResultSet(ResultSet set) throws SQLException {
-        FullTaskBuilder builder = new FullTaskBuilder();
-        FullTask fullTask = builder.setProjectId(set.getInt(TableParameters.PROJECT_ID))
-                                    .setProjectName(set.getString(TableParameters.PROJECT_NAME))
-                                    .setProjectDeadline(set.getDate(TableParameters.PROJECT_DEADLINE).toLocalDate())
-                                    .setProjectStatus(set.getString(TableParameters.PROJECT_STATUS))
-                                    .buildProject();
-        return fullTask;
-    }
-
-    /**
-     * Provides archivation functionality.
-     * At first, gets all information about existing tasks related to specific project.
-     * At second, puts project data into archive.
-     * At third, puts task data into archive.
-     * At forth, deletes project data from active project table. Task information will be deleted automatically by
-     * cascade.
-     * Checks that project going to be archived is not empty meaning has at least one task assigned to it.
-     *
-     * @param id        Id of project to be sent to archive
-     */
-    @Override
+        /**
+         * Provides archivation functionality.
+         * At first, gets all information about existing tasks related to specific project.
+         * At second, puts project data into archive.
+         * At third, puts task data into archive.
+         * At forth, deletes project data from active project table. Task information will be deleted automatically by
+         * cascade.
+         * Checks that project going to be archived is not empty meaning has at least one task assigned to it.
+         *
+         * @param id        Id of project to be sent to archive
+         */
+    /*@Override
     public void archiveProjectAndTasks(Integer id) {
 
         try (Connection connection = ConnectionPool.getConnection()) {
@@ -172,9 +175,9 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
                                                                                       buildedStatement.toString()), e);
             throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
         }
-    }
+    }*/
 
-    private List<FullTask> getProjectTaskData(Connection connection, Integer id) throws SQLException{
+    /*private List<FullTask> getProjectTaskData(Connection connection, Integer id) throws SQLException{
         List<FullTask> projectTaskData = new ArrayList<>();
         String requestGetProjectTaskData = builder.selectAllFromTable(TableParameters.TASK_TABLE_NAME)
                                                   .join(TableParameters.PROJECT_TABLE_NAME)
@@ -193,9 +196,9 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
         set.close();
         builder.clear();
         return projectTaskData;
-    }
+    }*/
 
-    private FullTask extractProjectTaskDataFromResultSet(ResultSet set) throws SQLException {
+    /*private FullTask extractProjectTaskDataFromResultSet(ResultSet set) throws SQLException {
         FullTaskBuilder builder = new FullTaskBuilder();
         FullTask fullTask = builder.setTaskId(set.getInt(TableParameters.TASK_ID))
                 .setTaskName(set.getString(TableParameters.TASK_NAME))
@@ -212,9 +215,9 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
 
                 .buildFullTask();
         return fullTask;
-    }
+    }*/
 
-    private void putProjectDataToArchive(Connection connection, Integer id, List<FullTask> projectData)
+    /*private void putProjectDataToArchive(Connection connection, Integer id, List<FullTask> projectData)
             throws SQLException{
         String requestPutProjectDataToArchive = builder.insertIntoTable(TableParameters.PROJECT_ARCHIVE_TABLE_NAME)
                                                        .insertValueNames(getProjectFieldNames())
@@ -251,9 +254,9 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
             statementPutTaskDataToArchive.executeUpdate();
             builder.clear();
         }
-    }
+    }*/
 
-    private void deleteProject(Connection connection, Integer id) throws SQLException{
+    /*private void deleteProject(Connection connection, Integer id) throws SQLException{
         String requestDeleteProject = builder.delete(TableParameters.PROJECT_TABLE_NAME)
                                              .where(TableParameters.PROJECT_ID)
                                              .build();
@@ -263,33 +266,9 @@ public class FullTaskDaoMySQLImpl implements FullTaskDao {
         statementDeleteProject.executeUpdate();
         builder.clear();
         statementDeleteProject.close();
-    }
+    }*/
 
-    private List<String> getProjectFieldNames() {
-        return Arrays.asList(TableParameters.PROJECT_ID, TableParameters.PROJECT_NAME, TableParameters.PROJECT_DEADLINE,
-                TableParameters.PROJECT_STATUS);
-    }
 
-    private List<String> getTaskFieldNames() {
-        return Arrays.asList(TableParameters.TASK_ID, TableParameters.TASK_PROJECT_ID, TableParameters.TASK_EMPLOYEE_ID,
-                TableParameters.TASK_NAME, TableParameters.TASK_STATUS, TableParameters.TASK_DEADLINE,
-                TableParameters.TASK_SPENT_TIME, TableParameters.TASK_APPROVAL_STATE);
-    }
 
-    @Override
-    public void create(FullTask entity) {
-    }
-
-    @Override
-    public FullTask findById(Integer integer) {
-        return null;
-    }
-
-    @Override
-    public void update(FullTask fullTask) {
-    }
-
-    @Override
-    public void delete(Integer integer) {
     }
 }

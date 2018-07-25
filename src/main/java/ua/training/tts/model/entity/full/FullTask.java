@@ -4,10 +4,57 @@ import ua.training.tts.model.entity.Employee;
 import ua.training.tts.model.entity.Project;
 import ua.training.tts.model.entity.Task;
 
-import javax.persistence.Entity;
 import java.time.LocalDate;
 
-public class FullTask {
+public class FullTask{
+
+    public FullTask(Project project, Task task) {
+        setProjectInfo(project);
+        setTaskInfo(task);
+    }
+
+    public FullTask(Employee employee, Project project, Task task) {
+        setProjectInfo(project);
+        setTaskInfo(task);
+        setEmployeeInfo(employee);
+    }
+
+    public FullTask(Employee employee, Project project) {
+        setProjectInfo(project);
+        setEmployeeInfo(employee);
+    }
+
+    public FullTask() {
+    }
+
+    private void setProjectInfo(Project project){
+        this.projectId = project.getId();
+        this.projectName = project.getName();
+        this.projectDeadline = project.getDeadline();
+        this.projectStatus = project.getStatus();
+    }
+
+    private void setTaskInfo(Task task){
+        this.taskId = task.getId();
+        this.taskName = task.getName();
+        this.taskDeadline = task.getDeadline();
+        this.taskSpentTime = task.getSpentTime();
+        this.taskStatus = task.getStatus();
+        this.taskApprovalState = task.getApprovalState();
+    }
+
+    private void setEmployeeInfo(Employee employee){
+        this.employeeId = employee.getId();
+        this.employeeLogin = employee.getLogin();
+        this.employeePassword = employee.getPassword();
+        this.employeeName = employee.getName();
+        this.employeeSurname = employee.getSurname();
+        this.employeePatronymic = employee.getPatronymic();
+        this.employeeEmail = employee.getEmail();
+        this.employeeMobilePhone = employee.getMobilePhone();
+        this.employeeComment = employee.getComment();
+        this.employeeAccountRole = employee.getAccountRole();
+    }
 
     private Integer projectId;
     private String projectName;

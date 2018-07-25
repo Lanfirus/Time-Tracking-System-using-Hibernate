@@ -4,10 +4,9 @@ import org.hibernate.annotations.NaturalId;
 import ua.training.tts.model.util.AccountRoleEnumConverter;
 
 import javax.persistence.*;
-import java.io.Serializable;
 
 @Entity
-public class Employee implements Serializable{
+public class Employee{
 
     public enum AccountRole {
         ADMIN, EMPLOYEE, UNKNOWN

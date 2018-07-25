@@ -1,15 +1,11 @@
 package ua.training.tts.model.service;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 import ua.training.tts.constant.ExceptionMessages;
 import ua.training.tts.constant.General;
 import ua.training.tts.constant.ReqSesParameters;
 import ua.training.tts.constant.model.dao.TableParameters;
-import ua.training.tts.controller.util.HibernateUtil;
 import ua.training.tts.model.dao.ProjectDao;
 import ua.training.tts.model.dao.factory.DaoFactory;
-import ua.training.tts.model.entity.Employee;
 import ua.training.tts.model.entity.Project;
 
 import javax.servlet.http.HttpServletRequest;
@@ -129,12 +125,7 @@ public class ProjectService {
      * @param project       Project entity built from user's data
      */
     private void sendReadyProjectDataToDB(Project project) {
-        //dao.create(project);
-        Session session = HibernateUtil.getSession();
-        session.beginTransaction();
-        session.persist(project);
-        session.getTransaction().commit();
-        session.close();
+        dao.create(project);
     }
 
     /**
@@ -142,23 +133,11 @@ public class ProjectService {
      * @param project       Project entity built from user's data
      */
     public void sendReadyUpdatedDataToDB(Project project) {
-        //dao.update(project);
-        Session session = HibernateUtil.getSession();
-        session.beginTransaction();
-        Project updatedProject = (Project) session.merge(project);
-        session.persist(updatedProject);
-        session.getTransaction().commit();
-        session.close();
+        dao.update(project);
     }
 
     public Project findById(Integer id){
-        //return dao.findById(id);
-        Session session = HibernateUtil.getSession();
-        session.beginTransaction();
-        Project project = session.load(Project.class, id);
-        session.getTransaction().commit();
-        session.close();
-        return project;
+        return dao.findById(id);
     }
 
     public List<Project> findAll(){
@@ -169,6 +148,7 @@ public class ProjectService {
         return dao.findAllActive();
     }
 
+    //todo Check when Arhivation is resolved
     public List<Project> findAllArchived(){
         return dao.findAllArchived();
     }

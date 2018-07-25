@@ -1,3 +1,4 @@
+/*
 package ua.training.tts.model.util.builder;
 
 import ua.training.tts.model.entity.Employee;
@@ -7,9 +8,11 @@ import ua.training.tts.model.entity.full.FullTask;
 
 import java.time.LocalDate;
 
+*/
 /**
  * Builder class for FullTask entity
- */
+ *//*
+
 public class FullTaskBuilder {
 
     private Integer projectId;
@@ -135,11 +138,13 @@ public class FullTaskBuilder {
         return this;
     }
 
-    /**
+    */
+/**
      * Builds full entity Employee with all available fields.
      * Designed to be used by admins to see Id and AccountRole of employees.
      * @return Employee
-     */
+     *//*
+
     public FullTask buildTaskProject(){
         FullTask fullTask = new FullTask();
         fullTask.setTaskId(taskId);
@@ -229,3 +234,4 @@ public class FullTaskBuilder {
         return fullTask;
     }
 }
+*/

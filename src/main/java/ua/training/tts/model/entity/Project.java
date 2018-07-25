@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 @Entity
 @Proxy(lazy = false)
-public class Project {
+public class Project{
 
     public enum Status {
         NEW, ASSIGNED, FINISHED, CANCELLED

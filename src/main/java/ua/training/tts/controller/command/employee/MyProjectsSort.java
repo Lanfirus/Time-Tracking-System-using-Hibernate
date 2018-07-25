@@ -1,3 +1,4 @@
+/*
 package ua.training.tts.controller.command.employee;
 
 import ua.training.tts.constant.Pages;
@@ -16,9 +17,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+*/
 /**
  * Sorts projects according to user preferences.
- */
+ *//*
+
 @AccessRights(acceptedRoles = {Employee.AccountRole.EMPLOYEE}, isAvailableForGuests = false)
 public class MyProjectsSort implements Command {
 
@@ -52,7 +55,8 @@ public class MyProjectsSort implements Command {
         return list;
     }
 
-    private List<FullTask> sortAscending(List<FullTask> list, String sortField) {
+    */
+/*private List<FullTask> sortAscending(List<FullTask> list, String sortField) {
         if (sortField.equals(TableParameters.PROJECT_ID)) {
             return list.stream().sorted(Comparator.comparing(FullTask::getProjectId)).collect(Collectors.toList());
         }
@@ -84,15 +88,18 @@ public class MyProjectsSort implements Command {
             return list.stream().sorted(Comparator.comparing(FullTask::getProjectStatus).reversed())
                     .collect(Collectors.toList());
         }
-    }
+    }*//*
 
-    /**
+
+    */
+/**
      * Pagination implementation. Creates sublist from original list according to current page user is on.
      * Returns it to be showed for user as well as some parameters to be used on page (like "Number of pages").
      * @param request       User's request from his browser.
      * @param list          Initial list of all Tasks assigned to this Employee.
      * @return              Sublist related to current page user is on.
-     */
+     *//*
+
     private static List<FullTask> prepareListForPagination(HttpServletRequest request, List<FullTask> list){
         int numberOfPages = (int)Math.ceil((double)list.size() / CommandParameters.RECORDS_PER_PAGE);
         String currentPage = request.getParameter(ReqSesParameters.CURRENT_PAGE);
@@ -116,4 +123,4 @@ public class MyProjectsSort implements Command {
 
         return list.subList(firstIndex, lastIndex);
     }
-}
+}*/

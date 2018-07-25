@@ -4,6 +4,7 @@ import ua.training.tts.model.dao.EmployeeDao;
 import ua.training.tts.model.dao.FullTaskDao;
 import ua.training.tts.model.dao.ProjectDao;
 import ua.training.tts.model.dao.TaskDao;
+import ua.training.tts.model.dao.impl.EmployeeDaoMySQLImpl;
 import ua.training.tts.model.dao.impl.FullTaskDaoMySQLImpl;
 import ua.training.tts.model.dao.impl.ProjectDaoMySQLImpl;
 import ua.training.tts.model.dao.impl.TaskDaoMySQLImpl;
@@ -14,7 +15,7 @@ public class JDBCDaoFactoryImpl extends DaoFactory {
 
     @Override
     public EmployeeDao createEmployeeDao() {
-        return null;
+        return new EmployeeDaoMySQLImpl();
     }
 
     @Override
@@ -24,7 +25,7 @@ public class JDBCDaoFactoryImpl extends DaoFactory {
 
     @Override
     public ProjectDao createProjectDao() {
-        return new ProjectDaoMySQLImpl(new RequestBuilder());
+        return new ProjectDaoMySQLImpl();
     }
 
     @Override

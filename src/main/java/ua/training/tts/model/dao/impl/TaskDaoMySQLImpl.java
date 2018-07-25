@@ -1,15 +1,23 @@
 package ua.training.tts.model.dao.impl;
 
+import org.hibernate.Session;
 import ua.training.tts.constant.ExceptionMessages;
 import ua.training.tts.constant.model.dao.TableParameters;
+import ua.training.tts.controller.util.HibernateUtil;
 import ua.training.tts.model.dao.TaskDao;
 import ua.training.tts.model.dao.connectionpool.ConnectionPool;
+import ua.training.tts.model.entity.Employee;
+import ua.training.tts.model.entity.Project;
 import ua.training.tts.model.entity.Task;
 import ua.training.tts.model.exception.DataChangeDetectedException;
 import ua.training.tts.model.util.RequestBuilder;
 import ua.training.tts.model.util.builder.TaskBuilder;
 import ua.training.tts.util.LogMessageHolder;
 
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.ParameterExpression;
+import javax.persistence.criteria.Root;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,54 +32,15 @@ public class TaskDaoMySQLImpl implements TaskDao {
         this.builder = builder;
     }
 
-    @Override
-    public void create(Task task) {
-        builder.clear();
-        String request = builder.insertIntoTable(TableParameters.TASK_TABLE_NAME)
-                                .insertValueNames(getFieldNames())
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-                PreparedStatement statement = connection.prepareStatement(request)) {
-            statement.setInt(1, task.getProjectId());
-            statement.setInt(2, task.getEmployeeId());
-            statement.setString(3, task.getName());
-            statement.setString(4, task.getStatus().name().toLowerCase());
-            statement.setDate(5, Date.valueOf(task.getDeadline()));
-            statement.setInt(6, task.getSpentTime());
-            statement.setString(7, task.getApprovalState().name().toLowerCase());
-            savedStatement = statement.toString();
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordInsertionToTableProblem(TableParameters.TASK_TABLE_NAME,
-                                                                                        savedStatement), e);
-            if (e.getMessage().contains(ExceptionMessages.CANNOT_ADD_UPDATE_CHILD_ROW)){
-                throw new DataChangeDetectedException();
-            }
-            else {
-                throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-            }
-        }
-    }
 
     @Override
     public Task findById(Integer id) {
-        builder.clear();
-        String request = builder.selectAllFromTable(TableParameters.TASK_TABLE_NAME)
-                                .where(TableParameters.TASK_ID)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-             PreparedStatement statement = connection.prepareStatement(request)) {
-            statement.setInt(1,id);
-            savedStatement = statement.toString();
-            ResultSet set = statement.executeQuery();
-            set.next();
-            return extractDataFromResultSet(set);
-        }
-        catch (SQLException e) {
-            log.error(LogMessageHolder.recordSearchingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                    savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        Task task = session.load(Task.class, id);
+        session.getTransaction().commit();
+        session.close();
+        return task;
     }
 
     /**
@@ -97,24 +66,16 @@ public class TaskDaoMySQLImpl implements TaskDao {
 
     @Override
     public List<Task> findAll() {
-        builder.clear();
-        List<Task> resultList = new ArrayList<>();
-        String request = builder.selectAllFromTable(TableParameters.TASK_TABLE_NAME)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-                PreparedStatement statement = connection.prepareStatement(request)){
-            savedStatement = statement.toString();
-            ResultSet set = statement.executeQuery();
-            while (set.next()){
-                Task result = extractDataFromResultSet(set);
-                resultList.add(result);
-            }
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordSearchingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                                                                                            savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
-        return resultList;
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Task> criteria = builder.createQuery(Task.class);
+        Root<Task> taskRoot = criteria.from(Task.class);
+        criteria.select(taskRoot);
+        List<Task> taskList = session.createQuery(criteria).getResultList();
+        session.getTransaction().commit();
+        session.close();
+        return taskList;
     }
 
     /**
@@ -152,26 +113,17 @@ public class TaskDaoMySQLImpl implements TaskDao {
      */
     @Override
     public List<Task> findAllByEmployeeId(Integer id) {
-        builder.clear();
-        List<Task> resultList = new ArrayList<>();
-        String request = builder.selectAllFromTable(TableParameters.TASK_TABLE_NAME)
-                                .where(TableParameters.TASK_EMPLOYEE_ID)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-                PreparedStatement statement = connection.prepareStatement(request)){
-            statement.setInt(1, id);
-            savedStatement = statement.toString();
-            ResultSet set = statement.executeQuery();
-            while (set.next()){
-                Task result = extractDataFromResultSet(set);
-                resultList.add(result);
-            }
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordSearchingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                                                                                            savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
-        return resultList;
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Task> criteria = builder.createQuery(Task.class);
+        Root<Task> taskRoot = criteria.from(Task.class);
+        criteria.select(taskRoot);
+        criteria.where(taskRoot.get("employeeId").in(id));
+        List<Task> taskList = session.createQuery(criteria).getResultList();
+        session.getTransaction().commit();
+        session.close();
+        return taskList;
     }
 
     /**
@@ -182,26 +134,17 @@ public class TaskDaoMySQLImpl implements TaskDao {
      */
     @Override
     public List<Task> findAllByStatus(String status) {
-        builder.clear();
-        List<Task> resultList = new ArrayList<>();
-        String request = builder.selectAllFromTable(TableParameters.TASK_TABLE_NAME)
-                                .where(TableParameters.TASK_STATUS)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-             PreparedStatement statement = connection.prepareStatement(request)){
-            statement.setString(1, status);
-            savedStatement = statement.toString();
-            ResultSet set = statement.executeQuery();
-            while (set.next()){
-                Task result = extractDataFromResultSet(set);
-                resultList.add(result);
-            }
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordSearchingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                                                                                            savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
-        return resultList;
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Task> criteria = builder.createQuery(Task.class);
+        Root<Task> taskRoot = criteria.from(Task.class);
+        criteria.select(taskRoot);
+        criteria.where(taskRoot.get("status").in(Task.Status.valueOf(status.toUpperCase())));
+        List<Task> taskList = session.createQuery(criteria).getResultList();
+        session.getTransaction().commit();
+        session.close();
+        return taskList;
     }
 
     /**
@@ -212,51 +155,17 @@ public class TaskDaoMySQLImpl implements TaskDao {
      */
     @Override
     public List<Task> findAllByApprovalState(String approvalState) {
-        builder.clear();
-        List<Task> resultList = new ArrayList<>();
-        String request = builder.selectAllFromTable(TableParameters.TASK_TABLE_NAME)
-                                .where(TableParameters.TASK_APPROVAL_STATE)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-                PreparedStatement statement = connection.prepareStatement(request)){
-            statement.setString(1, approvalState);
-            savedStatement = statement.toString();
-            ResultSet set = statement.executeQuery();
-            while (set.next()){
-                Task result = extractDataFromResultSet(set);
-                resultList.add(result);
-            }
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordSearchingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                                                                                          savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
-        return resultList;
-    }
-
-    @Override
-    public void update(Task task) {
-        builder.clear();
-        String request = builder.update(TableParameters.TASK_TABLE_NAME, getFieldNames())
-                                .where(TableParameters.TASK_ID)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-                PreparedStatement statement = connection.prepareStatement(request)){
-            statement.setInt(1, task.getProjectId());
-            statement.setInt(2, task.getEmployeeId());
-            statement.setString(3, task.getName());
-            statement.setString(4, task.getStatus().name().toLowerCase());
-            statement.setDate(5, Date.valueOf(task.getDeadline()));
-            statement.setInt(6, task.getSpentTime());
-            statement.setString(7, task.getApprovalState().name().toLowerCase());
-            statement.setInt(8, task.getId());
-            savedStatement = statement.toString();
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordUpdatingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                                                                                            savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<Task> criteria = builder.createQuery(Task.class);
+        Root<Task> taskRoot = criteria.from(Task.class);
+        criteria.select(taskRoot);
+        criteria.where(taskRoot.get("approvalState").in(Task.ApprovalState.valueOf(approvalState.toUpperCase())));
+        List<Task> taskList = session.createQuery(criteria).getResultList();
+        session.getTransaction().commit();
+        session.close();
+        return taskList;
     }
 
     /**
@@ -267,106 +176,43 @@ public class TaskDaoMySQLImpl implements TaskDao {
      *                                          task update
      */
     @Override
-    public void updateTaskByEmployee(Task task) throws DataChangeDetectedException{
-        try (Connection connection = ConnectionPool.getConnection()) {
-            builder.clear();
-            connection.setAutoCommit(false);
-            connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
-            Task taskFromDB = getTaskData(connection, task.getId());
-            if (taskFromDB.getApprovalState() == Task.ApprovalState.APPROVED
-                        && (taskFromDB.getStatus() == Task.Status.CANCELLED
-                        || taskFromDB.getStatus() == Task.Status.FINISHED)) {
-                throw new DataChangeDetectedException();
-            }
-            else {
-                updateTaskData(connection, task);
-                connection.commit();
-                connection.setAutoCommit(true);
-            }
+    public void updateTaskByEmployee(Task task) throws DataChangeDetectedException {
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        Task taskFromDB = session.load(Task.class, task.getId());
+        if (taskFromDB.getApprovalState() == Task.ApprovalState.APPROVED
+                && (taskFromDB.getStatus() == Task.Status.CANCELLED
+                || taskFromDB.getStatus() == Task.Status.FINISHED)) {
+            throw new DataChangeDetectedException();
+        } else {
+            taskFromDB.setStatus(task.getStatus());
+            taskFromDB.setSpentTime(task.getSpentTime());
+            taskFromDB.setApprovalState(task.getApprovalState());
+            //session.merge(taskFromDB);
         }
-        catch (SQLException e) {
-            log.error(LogMessageHolder.recordUpdatingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                    savedStatement), e);
-            if (e.getMessage().contains(ExceptionMessages.EMPTY_RESULT_SET)){
-                throw new DataChangeDetectedException();
-            }
-            else {
-                throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-            }
-        }
-    }
-
-    private Task getTaskData(Connection connection, Integer id) throws SQLException{
-        String requestGetTaskData = builder.selectAllFromTable(TableParameters.TASK_TABLE_NAME)
-                                            .where(TableParameters.TASK_ID)
-                                            .build();
-        PreparedStatement statementGetTaskData = connection.prepareStatement(requestGetTaskData);
-        statementGetTaskData.setInt(1, id);
-        savedStatement += statementGetTaskData.toString();
-        ResultSet set = statementGetTaskData.executeQuery();
-        set.next();
-        Task taskFromDB = extractDataFromResultSet(set);
-        set.close();
-        builder.clear();
-        return taskFromDB;
-    }
-
-    private void updateTaskData(Connection connection, Task task) throws SQLException{
-        List<String> fieldNames = Arrays.asList(TableParameters.TASK_STATUS, TableParameters.TASK_SPENT_TIME,
-                                                    TableParameters.TASK_APPROVAL_STATE);
-        String requestUpdateTaskData = builder.update(TableParameters.TASK_TABLE_NAME, fieldNames)
-                                              .where(TableParameters.TASK_ID)
-                                              .build();
-        PreparedStatement statementUpdateTaskData = connection.prepareStatement(requestUpdateTaskData);
-        statementUpdateTaskData.setString(1, task.getStatus().name().toLowerCase());
-        statementUpdateTaskData.setInt(2, task.getSpentTime());
-        statementUpdateTaskData.setString(3, task.getApprovalState().name().toLowerCase());
-        statementUpdateTaskData.setInt(4, task.getId());
-        savedStatement = statementUpdateTaskData.toString();
-        statementUpdateTaskData.executeUpdate();
-        statementUpdateTaskData.close();
+        session.getTransaction().commit();
+        session.close();
     }
 
     @Override
     public void delete(Integer id) {
-        builder.clear();
-        String request = builder.delete(TableParameters.TASK_TABLE_NAME)
-                                .where(TableParameters.TASK_ID)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-                PreparedStatement statement = connection.prepareStatement(request)){
-            statement.setInt(1, id);
-            savedStatement = statement.toString();
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordDeletingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                                                                                        savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        session.createQuery("delete from Task where id= :id").setParameter("id", id)
+                .executeUpdate();
+        session.getTransaction().commit();
+        session.close();
     }
 
     @Override
     public void setStatusById(Integer id, String status) {
-        builder.clear();
-        String request = builder.updateOne(TableParameters.TASK_TABLE_NAME, TableParameters.TASK_STATUS)
-                                .where(TableParameters.TASK_ID)
-                                .build();
-        try (Connection connection = ConnectionPool.getConnection();
-                PreparedStatement statement = connection.prepareStatement(request)){
-            statement.setString(1, status);
-            statement.setInt(2, id);
-            savedStatement = statement.toString();
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            log.error(LogMessageHolder.recordUpdatingInTableProblem(TableParameters.TASK_TABLE_NAME,
-                                                                                        savedStatement), e);
-            throw new RuntimeException(ExceptionMessages.SQL_GENERAL_PROBLEM);
-        }
-    }
-
-    private List<String> getFieldNames() {
-        return Arrays.asList(TableParameters.TASK_PROJECT_ID, TableParameters.TASK_EMPLOYEE_ID,
-                TableParameters.TASK_NAME, TableParameters.TASK_STATUS, TableParameters.TASK_DEADLINE,
-                TableParameters.TASK_SPENT_TIME, TableParameters.TASK_APPROVAL_STATE);
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        session.createQuery("update Task set status = :status where id = :id")
+                .setParameter("status", Task.Status.valueOf(status.toUpperCase()))
+                .setParameter("id", id)
+                .executeUpdate();
+        session.getTransaction().commit();
+        session.close();
     }
 }

@@ -1,7 +1,8 @@
 package ua.training.tts.model.dao;
 
 import org.apache.log4j.Logger;
-import ua.training.tts.model.util.RequestBuilder;
+import org.hibernate.Session;
+import ua.training.tts.controller.util.HibernateUtil;
 
 import java.util.List;
 
@@ -13,7 +14,13 @@ public interface GeneralDao<T, ID>{
      * Creates entry in database
      * @param entity
      */
-    void create(T entity);
+    default void create(T entity){
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        session.persist(entity);
+        session.getTransaction().commit();
+        session.close();
+    }
 
     /**
      * Returns entry from database by id
@@ -31,7 +38,13 @@ public interface GeneralDao<T, ID>{
      * Updates entry in database
      * @param entity
      */
-    void update(T entity);
+    default void update(T entity){
+        Session session = HibernateUtil.getSession();
+        session.beginTransaction();
+        session.merge(entity);
+        session.getTransaction().commit();
+        session.close();
+    }
 
     /**
      * Deletes entry in database by id
